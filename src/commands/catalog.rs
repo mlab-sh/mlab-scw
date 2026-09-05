@@ -12,7 +12,7 @@ use serde_json::{json, Value};
 
 use crate::scw::catalog::{self, PRODUCTS};
 use crate::scw::Paging;
-use crate::ui::render;
+use crate::ui::render::{self, wrap};
 
 #[derive(Args, Debug)]
 pub struct CatalogArgs {
@@ -217,34 +217,6 @@ fn severity_rank(s: &str) -> u8 {
     }
 }
 
-/// Wrap prose to a readable width at a fixed indent. Terminal width is not
-/// consulted on purpose: a paragraph that reflows between two runs cannot be
-/// diffed, and these are meant to be diffed.
-fn wrap(text: &str, indent: usize) -> String {
-    const WIDTH: usize = 76;
-    let pad = " ".repeat(indent);
-    let mut out = String::new();
-    let mut line = 0usize;
-
-    for word in text.split_whitespace() {
-        let w = word.chars().count();
-        if line == 0 {
-            out.push_str(word);
-            line = w;
-        } else if line + 1 + w > WIDTH {
-            out.push('\n');
-            out.push_str(&pad);
-            out.push_str(word);
-            line = w;
-        } else {
-            out.push(' ');
-            out.push_str(word);
-            line += 1 + w;
-        }
-    }
-    out
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -254,21 +226,6 @@ mod tests {
         assert!(severity_rank("critical") < severity_rank("high"));
         assert!(severity_rank("low") < severity_rank("info"));
         assert_eq!(severity_rank("banana"), severity_rank("info"));
-    }
-
-    #[test]
-    fn wrapping_is_deterministic_and_indents_continuations() {
-        let text = "one two three four five six seven eight nine ten eleven twelve \
-                    thirteen fourteen fifteen sixteen seventeen";
-        let out = wrap(text, 4);
-        assert!(out.contains('\n'), "it wrapped at all");
-        for (i, l) in out.lines().enumerate() {
-            assert!(l.chars().count() <= 80, "line {i} is {}", l.chars().count());
-            if i > 0 {
-                assert!(l.starts_with("    "), "continuation {i} is indented");
-            }
-        }
-        assert_eq!(out, wrap(text, 4), "the same input wraps the same way");
     }
 
     #[test]

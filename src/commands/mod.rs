@@ -7,6 +7,7 @@
 pub mod api;
 pub mod catalog;
 pub mod completions;
+pub mod iam;
 pub mod login;
 pub mod ping;
 pub mod profile;

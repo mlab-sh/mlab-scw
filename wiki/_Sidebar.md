@@ -5,6 +5,7 @@
 
 **Commands**
 - [catalog](Catalog)
+- [iam](Iam)
 - [login](Login)
 - [ping](Ping)
 - [whoami](Whoami)

@@ -66,6 +66,67 @@ pub const GRANT_COLS: &[Col] = &[
     Col("ON", &["on"]),
 ];
 
+/// Human accounts.
+pub const USER_COLS: &[Col] = &[
+    Col("NAME", &["email", "username"]),
+    Col("TYPE", &["type"]),
+    Col("STATUS", &["status"]),
+    Col("MFA", &["mfa"]),
+    Col("LOCKED", &["locked"]),
+    Col("LAST LOGIN", &["last_login_at"]),
+    Col("ID", &["id"]),
+];
+
+/// Non-human principals.
+pub const APPLICATION_COLS: &[Col] = &[
+    Col("NAME", &["name"]),
+    Col("KEYS", &["nb_api_keys"]),
+    Col("MANAGED", &["managed"]),
+    Col("CREATED", &["created_at"]),
+    Col("DESCRIPTION", &["description"]),
+    Col("ID", &["id"]),
+];
+
+/// Credentials. The bearer is an id here; `iam audit` names it.
+pub const API_KEY_COLS: &[Col] = &[
+    Col("ACCESS KEY", &["access_key"]),
+    Col("BEARER", &["application_id", "user_id"]),
+    Col("CREATED", &["created_at"]),
+    Col("EXPIRES", &["expires_at"]),
+    Col("FROM", &["creation_ip"]),
+    Col("DESCRIPTION", &["description"]),
+];
+
+/// The bindings.
+pub const POLICY_COLS: &[Col] = &[
+    Col("NAME", &["name"]),
+    Col("RULES", &["nb_rules"]),
+    Col("SETS", &["nb_permission_sets"]),
+    Col("SCOPES", &["nb_scopes"]),
+    Col("MANAGED", &["managed"]),
+    Col("PRINCIPAL", &["application_id", "group_id", "user_id"]),
+    Col("ID", &["id"]),
+];
+
+/// Groups, read for how membership is decided.
+pub const GROUP_COLS: &[Col] = &[
+    Col("NAME", &["name"]),
+    Col("ALL USERS", &["all_users"]),
+    Col("ALL APPS", &["all_applications"]),
+    Col("CREATED", &["created_at"]),
+    Col("DESCRIPTION", &["description"]),
+    Col("ID", &["id"]),
+];
+
+/// Keys injected into every machine at boot.
+pub const SSH_KEY_COLS: &[Col] = &[
+    Col("NAME", &["name"]),
+    Col("DISABLED", &["disabled"]),
+    Col("CREATED", &["created_at"]),
+    Col("FINGERPRINT", &["fingerprint"]),
+    Col("ID", &["id"]),
+];
+
 /// The audit catalogue: one row per readable resource.
 pub const CATALOG_COLS: &[Col] = &[
     Col("PRODUCT", &["product"]),
@@ -333,6 +394,34 @@ fn table_lines(rows: &[Value], spec: &[(String, Vec<String>)]) -> Vec<String> {
     out
 }
 
+/// Wrap prose to a readable width at a fixed indent. Terminal width is not
+/// consulted on purpose: a paragraph that reflows between two runs cannot be
+/// diffed, and these are meant to be diffed.
+pub fn wrap(text: &str, indent: usize) -> String {
+    const WIDTH: usize = 76;
+    let pad = " ".repeat(indent);
+    let mut out = String::new();
+    let mut line = 0usize;
+
+    for word in text.split_whitespace() {
+        let w = word.chars().count();
+        if line == 0 {
+            out.push_str(word);
+            line = w;
+        } else if line + 1 + w > WIDTH {
+            out.push('\n');
+            out.push_str(&pad);
+            out.push_str(word);
+            line = w;
+        } else {
+            out.push(' ');
+            out.push_str(word);
+            line += 1 + w;
+        }
+    }
+    out
+}
+
 /// Print raw JSON on stdout. The only thing `-o json` ever emits.
 pub fn print_json(v: &Value) {
     println!(
@@ -515,6 +604,23 @@ fn clip(s: &str) -> String {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    #[test]
+    fn wrapping_is_deterministic_and_indents_continuations() {
+        let text = "one two three four five six seven eight nine ten eleven twelve \
+                    thirteen fourteen fifteen sixteen seventeen";
+        let out = wrap(text, 4);
+        assert!(out.contains('\n'), "it wrapped at all");
+        for (i, l) in out.lines().enumerate() {
+            assert!(l.chars().count() <= 80, "line {i} is {}", l.chars().count());
+            if i > 0 {
+                assert!(l.starts_with("    "), "continuation {i} is indented");
+            }
+        }
+        assert_eq!(out, wrap(text, 4), "the same input wraps the same way");
+        assert_eq!(wrap("short enough", 4), "short enough");
+        assert_eq!(wrap("", 4), "");
+    }
 
     #[test]
     fn an_unknown_or_missing_format_falls_back_to_human() {

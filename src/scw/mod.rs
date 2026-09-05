@@ -7,6 +7,7 @@ pub mod identity;
 pub mod locality;
 pub mod secrets;
 
+pub use catalog::Severity;
 pub use client::{esc, Client, Paging};
 pub use config::Profile;
 pub use locality::Scope;

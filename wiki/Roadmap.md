@@ -26,6 +26,11 @@ would cover.
 
 ## Phase 2 — reading the account
 
+- **[`iam`](Iam)** — *built.* Who can do what, and twenty-six graded checks on
+  it. The checks are pure functions over fetched JSON in `src/audit/iam.rs`,
+  tested against fixtures, so a later `sweep` can feed them from a file instead
+  of from the API. The report groups by check, names what it could not read, and
+  names the catalogued checks it does not yet derive.
 - **`sweep`** — walk the catalogue and write one dated, secret-free record of
   everything the key can see. [`api`](Api) already proves each path individually;
   this is the fan-out over projects, regions and zones, with per-endpoint

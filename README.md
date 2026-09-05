@@ -56,6 +56,7 @@ if the key cannot read IAM. See
 | [`login`](wiki/Login.md) | Create or update a profile, prove the credentials work, save them. |
 | [`ping`](wiki/Ping.md) | Probe the API and report which permission sets actually answered. |
 | [`whoami`](wiki/Whoami.md) | What this key is, and every policy, permission set and scope behind it. |
+| [`iam`](wiki/Iam.md) | Who can do what, and 26 graded checks on it. The first real audit. |
 | [`project`](wiki/Project.md) | The projects the key can see — the boundary of every other answer. |
 | [`api`](wiki/Api.md) | Raw GET against any path, for everything not wrapped yet. |
 | [`profile`](wiki/Profile.md) | List, show, select and delete saved profiles. |

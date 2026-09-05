@@ -1,4 +1,4 @@
-# Phase 1 — test plan
+# Test plan — phases 1 and 2
 
 Everything below is a `cargo run -- …` you can paste. Nothing here writes to
 your account: every request the tool makes is a GET.
@@ -148,7 +148,69 @@ report has to state.
 
 ---
 
-## 4. The raw API
+## 4. The IAM audit (phase 2)
+
+The first real audit. Eight global calls, no locality sweep.
+
+```bash
+cargo run -- iam
+```
+
+**What to look for, in order of how much it would bother me if it were wrong:**
+
+1. **Does the top of the report match reality?** The inventory counts, and the
+   `! this report is partial` block if any listing was refused.
+2. **Is any finding simply false?** A check that fires on something correct is
+   worse than a check that does not exist — tell me the id and what is actually
+   the case.
+3. **Is any finding true but useless?** Noise is the other way an audit tool
+   stops being read.
+4. **Is anything obviously missing** that you would look at by hand?
+
+Severity floors, and the JSON:
+
+```bash
+cargo run -- iam audit --severity critical
+cargo run -- iam audit --severity high
+cargo run -- iam -o json | jq -r '.findings | group_by(.id)[] | "\(length)\t\(.[0].id)"' | sort -rn
+cargo run -- iam -o json | jq '.gaps, .notImplemented'
+```
+
+The specification behind the report, side by side with it:
+
+```bash
+cargo run -- catalog iam
+cargo run -- catalog iam --checks
+```
+
+Every check in the second list is either emitted by `iam` or named at the bottom
+of the report as underived. If you find one that is in neither, that is a bug in
+the bookkeeping, not just in the docs.
+
+The inventories, one call each:
+
+```bash
+cargo run -- iam users
+cargo run -- iam applications
+cargo run -- iam keys
+cargo run -- iam policies
+cargo run -- iam groups
+cargo run -- iam ssh-keys
+cargo run -- iam settings
+```
+
+Two checks worth confirming by hand against the console, because they are the
+ones most likely to be subtly wrong:
+
+- **`iam.groups.everyone`** — does any group with `ALL USERS` or `ALL APPS` true
+  actually carry a policy? If yes it should be a *high*; if no it should not
+  appear at all.
+- **`iam.policies.unused`** — is each named policy really attached to a principal
+  that cannot use it?
+
+---
+
+## 5. The raw API
 
 Paths come straight out of `catalog`. Substitute a zone or region you actually
 use.
@@ -228,7 +290,7 @@ cargo run -q -- api '/instance/v1/zones/{zone}/security_groups' --list --zone fr
 
 ---
 
-## 5. Output and rendering
+## 6. Output and rendering
 
 ```bash
 cargo run -- project                    # dates should read "2022-05-17  (4y ago)"
@@ -240,7 +302,7 @@ cargo run -- project -o json > /tmp/p.json && cat /tmp/p.json    # warnings stil
 
 ---
 
-## 6. Cleaning up
+## 7. Cleaning up
 
 ```bash
 cargo run -- profile remove prod
@@ -251,17 +313,27 @@ unset MLAB_SCW_CONFIG
 
 ## The feedback I actually want
 
-1. **Anything in the catalogue that is wrong or missing** for the products you
+Phase 2 first, because it is the new part and the part that can be wrong in ways
+the tests cannot catch:
+
+1. **Any `iam` finding that is false.** The id, and what is actually the case.
+   A check that fires on something correct is worse than a check that does not
+   exist.
+2. **Any `iam` finding that is true but not worth a line.** Noise is the other
+   way an audit stops being read.
+3. **Anything you would check by hand that `iam` does not.**
+
+Then phase 1:
+
+4. **Anything in the catalogue that is wrong or missing** for the products you
    run. Wrong path, wrong permission set, a check that is nonsense in practice,
    a product you use that is not there.
-2. **Any command whose output you had to read twice.** Column choice, wording,
-   what is missing from the human render that you went to `-o json` for.
-3. **Any error message that did not tell you what to do next.**
-4. **Whether the auto-picked table columns show you the right things.** They are
-   ordered identity, then booleans, then the rest, with `project_id` and
-   `organization_id` last — because in this API a boolean is nearly always a
-   control. If a column you needed got pushed off, tell me which.
-5. **Anything that felt slow**, and roughly how many resources you have — the
-   client backs off on 429 but nothing runs in parallel yet, which is phase 2.
-6. **Whether `whoami` matches reality.** It is the command everything else rests
-   on: if it under-reports a grant, every later "clean" is a lie.
+5. **Any command whose output you had to read twice.** Column choice, wording,
+   what is missing from the human render that sent you to `-o json`.
+6. **Any error message that did not tell you what to do next.**
+7. **Whether the auto-picked table columns show you the right things.** They go
+   identity, then booleans, then the rest, with `project_id` and
+   `organization_id` last. If a column you needed got pushed off, tell me which.
+8. **Anything that felt slow**, and roughly how many resources you have. The
+   client backs off on 429; the IAM audit fires its seven listings together, but
+   nothing else runs in parallel yet.

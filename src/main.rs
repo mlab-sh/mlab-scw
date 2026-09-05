@@ -5,10 +5,12 @@
 //! | module     | role                                                          |
 //! | ---------- | ------------------------------------------------------------- |
 //! | `scw`      | the API: HTTP handler, profiles, localities, the catalogue     |
+//! | `audit`    | the graded checks, as pure functions over fetched data         |
 //! | `ui`       | everything the user sees: progress on stderr, rendering        |
 //! | `cli`      | the clap surface and the dispatch                              |
 //! | `commands` | one module per command                                         |
 
+mod audit;
 mod cli;
 mod commands;
 mod scw;

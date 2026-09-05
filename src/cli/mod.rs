@@ -116,6 +116,12 @@ pub enum Cmd {
     /// Check that the current profile can reach the API
     Ping,
 
+    /// Who can do what: principals, credentials, policies, and the checks on them
+    Iam {
+        #[command(subcommand)]
+        cmd: Option<commands::iam::IamCmd>,
+    },
+
     /// What this API key is, and everything it is allowed to do
     #[command(alias = "identity")]
     Whoami,
@@ -171,6 +177,7 @@ pub async fn run() -> Result<()> {
         | Cmd::Completions { .. } => unreachable!(),
         Cmd::Ping => commands::ping::run(&c, &ctx).await,
         Cmd::Whoami => commands::whoami::run(&c, &ctx).await,
+        Cmd::Iam { cmd } => commands::iam::run(&c, &ctx, cmd).await,
         Cmd::Project(a) => commands::projects::run(&c, &ctx, &a).await,
         Cmd::Api(a) => commands::api::run(&c, &ctx, a).await,
     }
