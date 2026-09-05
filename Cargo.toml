@@ -1,0 +1,32 @@
+[package]
+name = "mlab-scw"
+version = "0.1.0"
+edition = "2021"
+description = "CLI over the Scaleway API, built as a base for read-only cloud posture audits"
+license = "MIT"
+repository = "https://github.com/mlab-sh/mlab-scw"
+homepage = "https://github.com/mlab-sh/mlab-scw"
+readme = "README.md"
+keywords = ["scaleway", "cloud", "security", "audit", "cli"]
+categories = ["command-line-utilities"]
+
+[[bin]]
+name = "mlab-scw"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive", "wrap_help"] }
+clap_complete = "4"
+colored = "3"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls-native-roots"] }
+rpassword = "7"
+rustls = { version = "0.23", default-features = false, features = ["ring", "std"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal", "time"] }
+
+[profile.release]
+strip = true
+opt-level = "z"
+lto = true
