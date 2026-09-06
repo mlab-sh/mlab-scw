@@ -424,15 +424,19 @@ impl<'a> Quiet<'a> {
                         ));
                     }
                 }
-                "TXT" if data.starts_with("v=spf1") => {
-                    if data.ends_with("?all") || data.ends_with("+all") {
-                        out.push(Finding::new(
-                            "domain.records.spf-weak",
-                            Severity::High,
-                            &full,
-                            "the SPF record ends in ?all or +all, which permits every sender",
-                        ));
-                    }
+                // The whole condition sits in the guard rather than half of it
+                // in a nested `if`: an SPF record that ends in `-all` or `~all`
+                // is correct, and falls through to the arm that does nothing.
+                "TXT"
+                    if data.starts_with("v=spf1")
+                        && (data.ends_with("?all") || data.ends_with("+all")) =>
+                {
+                    out.push(Finding::new(
+                        "domain.records.spf-weak",
+                        Severity::High,
+                        &full,
+                        "the SPF record ends in ?all or +all, which permits every sender",
+                    ));
                 }
                 _ => {}
             }
