@@ -696,6 +696,44 @@ fn everything() -> Vec<Fetched> {
                         "domain_name": "api.example.scw.cloud"})],
         ),
         got(
+            "registry",
+            "namespaces",
+            "fr-par",
+            vec![json!({"id": "rn1", "name": "public-ns", "is_public": true,
+                        "endpoint": "rg.fr-par.scw.cloud/public-ns"})],
+        ),
+        got(
+            "mongodb",
+            "instances",
+            "fr-par",
+            vec![json!({"id": "mg1", "name": "docs",
+                        "endpoints": [{"dns_record": "docs.example", "port": 27017,
+                                       "public_network": {}}]})],
+        ),
+        got(
+            "kafka",
+            "clusters",
+            "fr-par",
+            vec![json!({"id": "kf1", "name": "events",
+                        "endpoints": [{"dns_records": ["events.example"], "port": 9092,
+                                       "public_network": {}}]})],
+        ),
+        got(
+            "searchdb",
+            "deployments",
+            "fr-par",
+            vec![json!({"id": "sd1", "name": "search",
+                        "endpoints": [{"dns_record": "search.example", "public": true}]})],
+        ),
+        got(
+            "inference",
+            "deployments",
+            "fr-par",
+            vec![json!({"id": "inf1", "name": "llm",
+                        "endpoints": [{"url": "https://llm.example", "public_network": {},
+                                       "disable_auth": true}]})],
+        ),
+        got(
             "functions",
             "functions",
             "fr-par",
@@ -714,6 +752,11 @@ fn the_module_emits_exactly_what_it_claims_to_emit() {
     let sweep = everything();
     let emitted: BTreeSet<&str> = Edge::new(&sweep).audit(NOW).iter().map(|f| f.id).collect();
     let claimed: BTreeSet<&str> = IMPLEMENTED.into_iter().collect();
+    assert_eq!(
+        claimed.len(),
+        IMPLEMENTED.len(),
+        "IMPLEMENTED lists an id twice; a set comparison would never notice"
+    );
 
     let unclaimed: Vec<&&str> = emitted.difference(&claimed).collect();
     assert!(
@@ -769,6 +812,54 @@ fn a_certificate_is_graded_by_how_long_is_left_rather_than_by_a_flag() {
         "{}",
         expiring[0].detail
     );
+}
+
+#[test]
+fn a_product_that_appears_in_the_map_also_appears_in_the_findings() {
+    // Five products built map rows for a while and emitted nothing: a public
+    // MongoDB was in the inventory and absent from the findings. A map is read
+    // by whoever asked for one; a finding list is read by everyone.
+    use std::collections::BTreeSet;
+    let sweep = everything();
+    let edge = Edge::new(&sweep);
+
+    let in_map: BTreeSet<&str> = edge.exposures().iter().map(|e| e.kind).collect();
+    let judged: BTreeSet<&str> = edge
+        .audit(NOW)
+        .iter()
+        .map(|f| f.id.split('.').next().unwrap_or_default())
+        .collect();
+
+    // The map's own vocabulary, mapped back to the catalogue products it came
+    // from, so the two sides can be compared at all.
+    fn product_of(kind: &str) -> &str {
+        match kind {
+            "instance" => "instance",
+            "elastic metal" => "baremetal",
+            "apple silicon" => "apple-silicon",
+            "load balancer" => "lb",
+            "public gateway" => "vpc-gw",
+            "kubernetes api" => "k8s",
+            "managed database" => "rdb",
+            "redis" => "redis",
+            "mongodb" => "mongodb",
+            "kafka" => "kafka",
+            "opensearch" => "searchdb",
+            "container" => "containers",
+            "function" => "functions",
+            "inference" => "inference",
+            "registry" => "registry",
+            other => other,
+        }
+    }
+
+    for kind in in_map {
+        let product = product_of(kind);
+        assert!(
+            judged.contains(product),
+            "{kind} appears in the exposure map but {product} emits no finding"
+        );
+    }
 }
 
 #[test]

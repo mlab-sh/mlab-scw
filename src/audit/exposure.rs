@@ -544,7 +544,7 @@ impl<'a> Edge<'a> {
 }
 
 /// Every check id this module can emit.
-pub const IMPLEMENTED: [&str; 30] = [
+pub const IMPLEMENTED: [&str; 34] = [
     "instance.servers.public-no-filter",
     "instance.servers.default-group",
     "instance.security-groups.inbound-accept",
@@ -553,7 +553,6 @@ pub const IMPLEMENTED: [&str; 30] = [
     "instance.ips.dangling",
     "baremetal.servers.no-private-network",
     "baremetal.servers.rescue",
-    "apple-silicon.servers.vnc",
     "apple-silicon.servers.vnc",
     "flexible-ip.fips.dangling",
     "ipam.ips.public-inventory",
@@ -574,6 +573,11 @@ pub const IMPLEMENTED: [&str; 30] = [
     "redis.clusters.public-no-acl",
     "redis.clusters.no-tls",
     "containers.containers.public",
+    "registry.namespaces.public",
+    "mongodb.instances.public-endpoint",
+    "kafka.clusters.public",
+    "searchdb.deployments.public",
+    "inference.deployments.no-auth",
     "functions.functions.public",
 ];
 
@@ -590,6 +594,7 @@ impl Edge<'_> {
         self.check_kubernetes(&mut f);
         self.check_data(&mut f);
         self.check_serverless(&mut f);
+        self.check_open_by_nature(&mut f);
         super::sort(&mut f);
         f
     }
@@ -1041,6 +1046,89 @@ impl Edge<'_> {
                     Severity::Critical,
                     &who,
                     "TLS is off: the password and every value cross the network in clear",
+                ));
+            }
+        }
+    }
+
+    /// The products whose exposure is the finding: there is no ACL to read and
+    /// no control to weigh, so a public endpoint is the whole story.
+    ///
+    /// These built rows in the map for a while without emitting anything, which
+    /// meant a public MongoDB appeared in the inventory and not in the
+    /// findings. A map is read by whoever asked for one; a finding list is read
+    /// by everyone.
+    fn check_open_by_nature(&self, out: &mut Vec<Finding>) {
+        for (region, ns) in self.of("registry", "namespaces") {
+            if !b(ns, "is_public") {
+                continue;
+            }
+            out.push(Finding::new(
+                "registry.namespaces.public",
+                Severity::Critical,
+                format!("{} ({region})", name_or_id(ns)),
+                format!(
+                    "anonymous pull at {}: every image in it, every layer, and anything baked \
+                     into them",
+                    s(ns, "endpoint")
+                ),
+            ));
+        }
+
+        for (product, resource, id, what) in [
+            (
+                "mongodb",
+                "instances",
+                "mongodb.instances.public-endpoint",
+                "MongoDB",
+            ),
+            ("kafka", "clusters", "kafka.clusters.public", "Kafka"),
+            (
+                "searchdb",
+                "deployments",
+                "searchdb.deployments.public",
+                "OpenSearch",
+            ),
+        ] {
+            for (locality, thing) in self.of(product, resource) {
+                let public: Vec<&Value> = endpoints(thing)
+                    .into_iter()
+                    .filter(|ep| ep.get("public_network").is_some() || b(ep, "public"))
+                    .collect();
+                if public.is_empty() {
+                    continue;
+                }
+                out.push(Finding::new(
+                    id,
+                    Severity::Critical,
+                    format!("{} ({locality})", name_or_id(thing)),
+                    format!(
+                        "{what} answers on the public internet at {}",
+                        public
+                            .iter()
+                            .map(|ep| endpoint_host(ep))
+                            .filter(|h| !h.is_empty())
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    ),
+                ));
+            }
+        }
+
+        for (region, dep) in self.of("inference", "deployments") {
+            for ep in endpoints(dep) {
+                if ep.get("public_network").is_none() || !b(ep, "disable_auth") {
+                    continue;
+                }
+                out.push(Finding::new(
+                    "inference.deployments.no-auth",
+                    Severity::Critical,
+                    format!("{} ({region})", name_or_id(dep)),
+                    format!(
+                        "a public model endpoint at {} with authentication disabled: a GPU \
+                         anyone can drive, billed to you",
+                        s(ep, "url")
+                    ),
                 ));
             }
         }

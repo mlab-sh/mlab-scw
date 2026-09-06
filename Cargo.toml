@@ -1,6 +1,6 @@
 [package]
 name = "mlab-scw"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 description = "CLI over the Scaleway API, built as a base for read-only cloud posture audits"
 license = "MIT"
@@ -9,6 +9,43 @@ homepage = "https://github.com/mlab-sh/mlab-scw"
 readme = "README.md"
 keywords = ["scaleway", "cloud", "security", "audit", "cli"]
 categories = ["command-line-utilities"]
+
+# Debian packaging. The .deb ships on the GitHub release, nowhere else. The
+# release profile already strips the binary, so CI passes --no-strip: letting
+# cargo-deb strip it again would run the host strip against the aarch64 binary
+# and fail the cross build.
+# cargo-deb rewrites `target/release` to `target/<triple>/release` when it is
+# given --target, so one asset list covers both architectures.
+[package.metadata.deb]
+maintainer = "mlab <hello@mlab.sh>"
+section = "utils"
+priority = "optional"
+extended-description = """\
+mlab-scw reads a Scaleway account over its API and turns what it finds into \
+graded security checks: who can do what, what answers from the internet, what \
+nobody has looked at in years, and what has been published about the software \
+it runs. Every request it makes is a GET."""
+depends = "$auto"
+assets = [
+    ["target/release/mlab-scw", "usr/bin/", "755"],
+    ["README.md", "usr/share/doc/mlab-scw/README.md", "644"],
+    ["LICENSE", "usr/share/doc/mlab-scw/copyright", "644"],
+]
+
+# RPM packaging, for dnf/yum. Unlike cargo-deb, the source paths here are taken
+# literally, so CI stages the cross-built binary at pkg/mlab-scw first rather
+# than relying on a target rewrite that would silently package the wrong
+# architecture. auto-req is off for the same reason: deriving requirements
+# means running the host's find-requires against a foreign binary.
+[package.metadata.generate-rpm]
+summary = "CLI over the Scaleway API, for read-only cloud posture audits"
+license = "MIT"
+auto-req = "disabled"
+assets = [
+    { source = "pkg/mlab-scw", dest = "/usr/bin/mlab-scw", mode = "755" },
+    { source = "README.md", dest = "/usr/share/doc/mlab-scw/README.md", mode = "644", doc = true },
+    { source = "LICENSE", dest = "/usr/share/licenses/mlab-scw/LICENSE", mode = "644", doc = true },
+]
 
 [[bin]]
 name = "mlab-scw"

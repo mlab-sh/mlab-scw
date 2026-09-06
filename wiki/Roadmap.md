@@ -1,77 +1,124 @@
 # Roadmap
 
-## Phase 1 — the base (built)
+## Where it stands
 
-Everything needed to talk to an account safely, and to know what talking to it
-would cover.
+**113 of the catalogue's 229 checks are derived** — 49%. The rest is not
+oversight, it is work not done, and every report says which is which rather than
+letting silence read as safety.
 
-- **The key manager.** Profiles in `~/.mlab/scw.conf`, 0600 in a 0700 directory,
-  both halves of the pair shape-checked before a request is spent, secret read
-  without echo, `SCW_*` environment compatibility. [Configuration](Configuration)
-- **The HTTP layer.** One GET path, three paging styles, bounded retries on 429
-  and 5xx honouring `Retry-After`, redirects refused so the token cannot leak,
-  typed errors that tell a refused permission apart from a broken key and fold
-  the API's `details` array into the message. [Surfaces](Surfaces)
-- **Localities.** Every region and zone swept by default; `--region` and
-  `--zone` narrow coherently across global, regional and zonal products.
-- **The catalogue.** 36 product APIs, 99 resources, 221 checks, as data rather
-  than code — so the plan prints before it runs and the least-privilege policy
-  is generated from intent. [Catalog](Catalog)
-- **Identity.** The organization bootstrap — key, principal, organization —
-  shared by every command that needs it. [Surfaces](Surfaces#3-there-is-no-who-am-i-and-the-bootstrap-is-awkward)
-- **Commands.** [catalog](Catalog), [login](Login), [ping](Ping),
-  [whoami](Whoami), [project](Project), [api](Api), [profile](Profile),
-  [config](Config), [completions](Completions).
-- **Secret redaction** on every printed response. [Secrets](Secrets)
+| command | checks | what it answers |
+| --- | --- | --- |
+| [`iam`](Iam) | 26 | who can do what |
+| [`exposure`](Exposure) | 34 | what answers from the internet, and what narrows it |
+| [`quiet`](Quiet) | 47 | what nobody has looked at in years |
+| [`advisories`](Advisories) | 6 | what has been published about what it runs |
 
-## Phase 2 — reading the account
+Three catalogued **criticals** are still underived, and they are named below
+rather than buried.
 
-- **[`iam`](Iam)** — *built.* Who can do what, and twenty-six graded checks on
-  it. The checks are pure functions over fetched JSON in `src/audit/iam.rs`,
-  tested against fixtures, so a later `sweep` can feed them from a file instead
-  of from the API. The report groups by check, names what it could not read, and
-  names the catalogued checks it does not yet derive.
-- **[`exposure`](Exposure)** — *built.* The cross-product map of what answers
-  from the internet and what narrows it, in three rounds over every locality,
-  with 30 graded checks. The concurrent locality fan-out it needed
-  (`src/scw/sweep.rs`) is the machinery `sweep` will reuse.
-- **[`quiet`](Quiet)** — *built.* The products nobody looks at: credentials in
-  plain environment variables, DNS records pointing at infrastructure the
-  account no longer holds, registry visibility, device-fleet trust, forgotten
-  data. 47 checks, and the credential detector in `src/audit/credential.rs`
-  that the first of those rests on.
-- **[`advisories`](Advisories)** — *built.* The versions the account runs,
-  matched against the published corpus at vuln.mlab.sh by CPE and version
-  range. The only command that talks to anything but `api.scaleway.com`:
-  opt-in per run, a product identifier is all that leaves, and `--explain`
-  prints the payload before it is sent.
-- **`sweep`** — walk the catalogue and write one dated, secret-free record of
-  everything the key can see. [`api`](Api) already proves each path individually;
-  this is the fan-out over projects, regions and zones, with per-endpoint
-  refusals recorded rather than fatal, and concurrency that respects the rate
-  limiter the client already backs off from.
-- **`audit`** — the checks in `catalog --checks`, as pure functions over a
-  sweep. Graded, worst first, each finding carrying the endpoint it came from.
-- **`diff`** — what changed between two sweeps. The most useful thing the UniFi
-  tool does, and it transfers directly.
+## Built
 
-## Phase 3 — the questions no single endpoint answers
+**Phase 1 — the base.** The key manager (profiles in `~/.mlab/scw.conf`, 0600 in
+a 0700 directory, both halves of the pair shape-checked before a request is
+spent, `SCW_*` compatibility). The HTTP layer: one GET path, three paging
+styles, bounded retries on 429 and the retryable 5xx, redirects refused so the
+token cannot leak, typed errors that tell a refused permission apart from a
+broken key and fold the API's `details` array into the message. Localities swept
+in full by default. The [catalogue](Catalog) as data. The organization bootstrap
+in `scw/identity.rs`. `catalog`, `login`, `ping`, `whoami`, `project`, `api`,
+`profile`, `config`, `completions`. Secret redaction on every printed response.
 
-These are why reading thirty-six APIs in one pass is worth the effort.
+**Phase 2 — [`iam`](Iam).** Principals, credentials, policies, rules, groups,
+SSH keys and the organization's own security settings, as pure functions over
+fetched JSON in `src/audit/iam.rs`.
 
-- **`blast`** — what one credential reaches: policies and rules on one side,
-  private NICs, gateway networks and VPC ACL rules on the other.
-- **`spend`** — billing read as a detector. A consumption line moving against
-  its own twelve-month baseline is the earliest signal of a stolen key that most
-  accounts actually have.
+**Phase 3 — [`exposure`](Exposure).** The cross-product map of what answers from
+the internet and what narrows it, in three rounds over every locality. The
+concurrent fan-out it needed (`src/scw/sweep.rs`) is the machinery the rest
+reuses.
 
-## Phase 4 — the surface that is not on this API
+**Phase 4 — [`quiet`](Quiet).** Plaintext credentials in environment variables,
+DNS records pointing at infrastructure the account no longer holds, registry
+visibility, device-fleet trust, forgotten data. Rests on the credential detector
+in `src/audit/credential.rs`.
 
-- **Object Storage.** S3 over SigV4 at `s3.{region}.scw.cloud` with the same key
-  pair: bucket ACLs, bucket policies, public access, lifecycle, versioning.
-  Requires signing code, and is scoped to the key's *preferred Object Storage
-  project* — which has to be said out loud in the output, because a public
-  bucket in another project is invisible to the same credential that can list
-  every server in it.
-- **Packaging.** Homebrew, `.deb`, `.rpm`, prebuilt binaries, a release
-  pipeline — as `mlab-unifi` has.
+**Phase 5 — [`advisories`](Advisories).** Versions matched against the published
+corpus by CPE and version range. The only command that talks to anything but
+`api.scaleway.com`: opt-in per run, a product identifier is all that leaves, and
+`--explain` prints the payload before it is sent.
+
+**Packaging.** Homebrew, `.deb`, `.rpm`, prebuilt tarballs for macOS and Linux on
+x86_64 and arm64, checksums, and a release pipeline. See [Releasing](Releasing).
+
+## What is missing, worst first
+
+### 1. Detection — can this account notice anything?
+
+The one gap that changes the value of everything already built. The same
+misconfiguration is a different risk in an account that would spot it within the
+hour and one that would never spot it at all, and right now the tool says
+nothing about which of those this is.
+
+- **Cockpit**: is alerting switched on, does it have anywhere to send an alert,
+  and is log retention longer than the time it takes to notice a breach. Every
+  call is project-scoped, so the honest answer is per project and is usually
+  worse than the account-level one.
+- **Audit Trail**: how far back the record actually goes, which bounds every
+  answer this tool gives; IAM changes, which are the shortest path from a
+  foothold to persistence; and
+  `audit-trail.authentication-events.success-after-failures` — **a catalogued
+  critical**: a successful login after a run of failures, from a country the
+  account has never seen.
+- **Billing read as a detector**: a consumption line moving against its own
+  twelve-month baseline is the earliest signal of a stolen key that most
+  accounts actually have. Mining shows up as compute, exfiltration as Object
+  Storage egress, and both arrive weeks before anyone reads a log.
+
+### 2. `instance.user-data.secret` — a catalogued critical
+
+cloud-init is the most reliable place to find a plaintext credential in any
+cloud account. The detector that would read it already exists and is tested
+(`src/audit/credential.rs`, phase 4); what is missing is one more sweep round,
+per server, over `/servers/{id}/user_data`. Nothing to design, only to build.
+
+### 3. `diff` — run it twice, compare
+
+The tool can audit and cannot compare. Every run starts from nothing, so a
+bucket that became public on Tuesday looks exactly like one that has always been
+public. This is what `mlab-unifi` does best and it transfers directly: one dated
+record per run, then what changed between two of them. It needs `sweep` below.
+
+### 4. Object Storage
+
+The documented blind spot, and a real one. Buckets, ACLs, bucket policies,
+public-access settings, lifecycle and versioning are S3 over SigV4 at
+`s3.{region}.scw.cloud`, not on `api.scaleway.com`. Two consequences: it needs
+request signing rather than a header, and an API key carries a *preferred
+Object Storage project* fixed at creation — so a public bucket in another
+project is invisible to the same credential that can list every server in it.
+That has to be said in the output, not just implemented.
+
+### 5. `sweep` and `audit`
+
+Four commands each sweep for themselves, which duplicates calls and means "run
+everything" is four invocations and four reports. One sweep writing a dated,
+secret-free record, and one `audit` reading it, would fix both — and would let
+the existing pure check functions run against a file instead of an account,
+which is what makes `diff` possible.
+
+### 6. `baremetal.bmc.open` — a catalogued critical, deferred on purpose
+
+`GET /servers/{id}/bmc-access` returns a URL, a login and a password in plain
+text. Reading it to confirm the console is exposed is also *making it leave the
+API*. It is one round to implement and a decision to take first, so it is
+recorded here rather than shipped quietly.
+
+### 7. Smaller, known
+
+- `--project-id` fills `{project}` in [`api`](Api) and nothing else reads it.
+- The optional `mlab.sh` key: the service advertises no authentication scheme,
+  so the header name has to come from somebody who knows it before the profile
+  gains a field for it.
+- 40 catalogued `high` checks remain, mostly configuration rather than
+  reachability: backup schedules, engine end-of-life, LB backend TLS
+  verification, VPC ACL defaults, Edge Services WAF mode.

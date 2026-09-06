@@ -34,6 +34,7 @@ mlab-scw advisories --allow-web  # what has been published about what you run
 
 **Project**
 - [Roadmap](Roadmap) — what is built, and what phase two is.
+- [Releasing](Releasing) — how a version becomes a tarball, a package and a formula.
 
 ## A note on the examples
 

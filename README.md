@@ -19,12 +19,27 @@ is sent.
 
 ## Install
 
-From source, with a recent Rust toolchain:
+**Homebrew** (macOS and Linux)
+
+```bash
+brew tap mlab-sh/mlab-scw https://github.com/mlab-sh/mlab-scw.git
+brew install mlab-scw
+```
+
+**Debian, Ubuntu, Fedora and RHEL**: a `.deb` and an `.rpm` per architecture on
+the [releases page](https://github.com/mlab-sh/mlab-scw/releases), alongside
+prebuilt tarballs for macOS and Linux on x86_64 and arm64. Every release carries
+a `SHA256SUMS` file covering all of its assets.
+
+**From source**, with a recent Rust toolchain:
 
 ```bash
 git clone https://github.com/mlab-sh/mlab-scw.git
 cd mlab-scw && cargo build --release
 ```
+
+See [Install](wiki/Install.md) for the details, and
+[Releasing](wiki/Releasing.md) for how these packages are built.
 
 ## First run
 
@@ -67,6 +82,9 @@ if the key cannot read IAM. See
 | [`exposure`](wiki/Exposure.md) | What answers from the internet, what narrows it, and 30 checks on the gap. |
 | [`quiet`](wiki/Quiet.md) | The products nobody looks at: plaintext credentials, dangling names, forgotten data. |
 | [`advisories`](wiki/Advisories.md) | What the account runs, against what has been published about it. |
+
+113 of the catalogue's 229 checks are derived today. Every report names what it
+did not look at; [Roadmap](wiki/Roadmap.md) names what is not built yet.
 | [`project`](wiki/Project.md) | The projects the key can see — the boundary of every other answer. |
 | [`api`](wiki/Api.md) | Raw GET against any path, for everything not wrapped yet. |
 | [`profile`](wiki/Profile.md) | List, show, select and delete saved profiles. |
@@ -145,6 +163,8 @@ one page per command plus the concepts they rest on:
 - [Secrets](wiki/Secrets.md) — why a read-only API key is not read-only in the
   way you would hope.
 - [Roadmap](wiki/Roadmap.md) — what is built and what is next.
+- [Releasing](wiki/Releasing.md) — how a version becomes a tarball, a package
+  and a formula.
 
 The pages are written in [`wiki/`](wiki/Home.md) in this repository and mirrored
 to the GitHub wiki by
@@ -165,9 +185,12 @@ src/
   cli/             the clap surface, and the context a command runs in
   commands/        one file per command
   scw/             the HTTP client, profiles, localities, identity, the catalogue
+  audit/           the graded checks, as pure functions over fetched data
+  enrich/          the advisory corpus, and the CPE table it is asked with
   ui/              the terminal render and the progress rules
 wiki/              the documentation, mirrored to the GitHub wiki
-.github/workflows/ CI, and the wiki sync
+.github/workflows/ CI, the release pipeline, and the wiki sync
+Formula/           the Homebrew formula, regenerated at every release
 ```
 
 Built to the same shape as [mlab-unifi](https://github.com/mlab-sh/mlab-unifi).

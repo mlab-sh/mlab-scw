@@ -329,6 +329,14 @@ fn every_id_this_module_emits_exists_in_the_catalogue() {
             "{id} is emitted but not catalogued"
         );
     }
+    // A set comparison would never notice a repeated entry, which is exactly
+    // how one sat unnoticed in the exposure module's list.
+    let unique: std::collections::BTreeSet<&str> = IMPLEMENTED.into_iter().collect();
+    assert_eq!(
+        unique.len(),
+        IMPLEMENTED.len(),
+        "IMPLEMENTED lists an id twice"
+    );
 }
 
 #[test]

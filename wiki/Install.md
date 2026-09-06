@@ -1,6 +1,42 @@
 # Install
 
-## Build
+## Install
+
+From the first tagged release onward, every channel below carries the same
+binary, built by [the release pipeline](Releasing) and checksummed on the
+release page.
+
+**Homebrew** (macOS and Linux)
+
+```bash
+brew tap mlab-sh/mlab-scw https://github.com/mlab-sh/mlab-scw.git
+brew install mlab-scw
+```
+
+**Debian and Ubuntu**: download the `.deb` for your architecture from the
+[releases page](https://github.com/mlab-sh/mlab-scw/releases), then:
+
+```bash
+sudo apt install ./mlab-scw_1.0.0_amd64.deb
+```
+
+**Fedora, RHEL and rebuilds**: the same with the `.rpm`:
+
+```bash
+sudo dnf install ./mlab-scw-1.0.0-1.x86_64.rpm
+```
+
+**Prebuilt binary** (macOS and Linux, x86_64 and arm64): a tarball from the same
+page. The Linux builds are linked against glibc 2.35, so Debian 12 and Ubuntu
+22.04 and newer.
+
+Every release carries a `SHA256SUMS` file covering all of its assets:
+
+```bash
+sha256sum -c --ignore-missing SHA256SUMS
+```
+
+## Build from source
 
 A recent Rust toolchain is all it needs.
 
@@ -15,8 +51,9 @@ The binary lands at `target/release/mlab-scw`. During development,
 written as `mlab-scw <command>` and translates directly.
 
 ```bash
-cargo test        # 57 tests, none of which touch the network
-cargo clippy --all-targets
+cargo test                              # 193 tests, none of which touch the network
+cargo test -- --ignored corpus_answers  # the one that does, opt-in
+cargo clippy --all-targets -- -D warnings
 ```
 
 ## Create the API key

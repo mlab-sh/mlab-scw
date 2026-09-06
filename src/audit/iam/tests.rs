@@ -625,6 +625,11 @@ fn the_module_emits_exactly_what_it_claims_to_emit() {
     // output.
     let emitted: BTreeSet<&str> = audit(&everything(), NOW).iter().map(|f| f.id).collect();
     let claimed: BTreeSet<&str> = IMPLEMENTED.into_iter().collect();
+    assert_eq!(
+        claimed.len(),
+        IMPLEMENTED.len(),
+        "IMPLEMENTED lists an id twice; a set comparison would never notice"
+    );
 
     let unclaimed: Vec<&&str> = emitted.difference(&claimed).collect();
     assert!(
