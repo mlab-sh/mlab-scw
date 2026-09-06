@@ -7,6 +7,7 @@
 - [catalog](Catalog)
 - [iam](Iam)
 - [exposure](Exposure)
+- [quiet](Quiet)
 - [login](Login)
 - [ping](Ping)
 - [whoami](Whoami)

@@ -189,10 +189,14 @@ fn report(fetched: &[Fetched], args: &ExposureArgs, localities: usize) -> Result
     let findings = edge.audit(crate::scw::now());
     let gaps = sweep::gaps(fetched);
 
-    let floor = args.severity.as_deref().map(rank).unwrap_or(u8::MAX);
+    let floor = args
+        .severity
+        .as_deref()
+        .map(audit::report::rank)
+        .unwrap_or(u8::MAX);
     let shown: Vec<&audit::Finding> = findings
         .iter()
-        .filter(|f| rank(f.severity.as_str()) <= floor)
+        .filter(|f| audit::report::rank(f.severity.as_str()) <= floor)
         .collect();
 
     if render::is_json() {
@@ -254,54 +258,8 @@ fn report(fetched: &[Fetched], args: &ExposureArgs, localities: usize) -> Result
         return Ok(());
     }
 
-    let mut severity = "";
-    let mut i = 0;
-    while i < shown.len() {
-        let f = shown[i];
-        if f.severity.as_str() != severity {
-            severity = f.severity.as_str();
-            println!();
-            println!("  {}", paint(severity, &severity.to_uppercase()).bold());
-        }
-        let end = shown[i..]
-            .iter()
-            .position(|x| x.id != f.id)
-            .map_or(shown.len(), |n| i + n);
-        let group = &shown[i..end];
-        i = end;
-
-        println!();
-        let count = if group.len() == 1 {
-            String::new()
-        } else {
-            format!("  {}", format!("×{}", group.len()).bold())
-        };
-        println!("  {}{count}", f.id.dimmed());
-        if group.iter().all(|x| x.detail == f.detail) {
-            println!("  {}", render::wrap(&f.detail, 2));
-            for x in group {
-                println!("    {}", x.subject);
-            }
-        } else {
-            for x in group {
-                println!("    {}", x.subject.bold());
-                println!("      {}", render::wrap(&x.detail, 6).dimmed());
-            }
-        }
-    }
-
-    println!();
-    let mut tally = Vec::new();
-    for level in ["critical", "high", "medium", "low", "info"] {
-        let n = shown
-            .iter()
-            .filter(|f| f.severity.as_str() == level)
-            .count();
-        if n > 0 {
-            tally.push(format!("{n} {}", paint(level, level)));
-        }
-    }
-    println!("  {}", tally.join("  ·  "));
+    audit::report::print(&shown);
+    audit::report::tally(&shown);
     println!();
     // The catalogue holds far more checks than this command derives, and most
     // of them are about configuration rather than reachability. Saying how many
@@ -319,26 +277,6 @@ fn report(fetched: &[Fetched], args: &ExposureArgs, localities: usize) -> Result
     );
     println!();
     Ok(())
-}
-
-fn paint(severity: &str, text: &str) -> colored::ColoredString {
-    match severity {
-        "critical" => text.red().bold(),
-        "high" => text.red(),
-        "medium" => text.yellow(),
-        "low" => text.cyan(),
-        _ => text.dimmed(),
-    }
-}
-
-fn rank(severity: &str) -> u8 {
-    match severity {
-        "critical" => 0,
-        "high" => 1,
-        "medium" => 2,
-        "low" => 3,
-        _ => 4,
-    }
 }
 
 #[cfg(test)]

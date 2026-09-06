@@ -1,4 +1,4 @@
-# Test plan — phases 1 to 3
+# Test plan — phases 1 to 4
 
 Everything below is a `cargo run -- …` you can paste. Nothing here writes to
 your account: every request the tool makes is a GET.
@@ -259,7 +259,56 @@ call I made rather than a fact the API states:
 
 ---
 
-## 6. The raw API
+## 6. The quiet products (phase 4)
+
+Everything nobody looks at. Around 190 calls in three seconds.
+
+```bash
+cargo run --release -- quiet
+```
+
+**What to look for, in order:**
+
+1. **Any finding that is false.** This command makes more judgement calls than
+   the other two, and the credential detector is the one most able to be wrong
+   in both directions.
+2. **A credential in a plain environment variable that it did *not* find.** Look
+   at your containers, functions and job definitions yourself and compare —
+   a missed one is silent.
+3. **A DNS record you know is dangling that it did not flag.**
+
+```bash
+cargo run --release -- quiet --severity critical
+cargo run --release -- quiet -o json | jq -r '.findings | group_by(.id)[] | "\(length)\t\(.[0].id)"' | sort -rn
+cargo run --release -- quiet -o json | jq '.gaps, .projects'
+```
+
+Four behaviours worth confirming deliberately, because each is a judgement I
+made rather than a fact the API states:
+
+- **The detector never prints the value.** Every `plaintext-secret` finding
+  should name the variable and say *why*, and carry nothing you would mind
+  pasting into a ticket. If a value appears anywhere in the output, that is the
+  most serious bug in the tool.
+- **It stays quiet on names that only mention a secret.** `TOKEN_TTL=3600`,
+  `SECRET_NAME=prod-db-password`, `API_KEY_FILE=/run/secrets/key` and
+  `DB_PASSWORD=${DB_PASSWORD}` must all produce nothing. Add one to a
+  non-production container and check.
+- **The marketplace is not your golden image.** `instance/images` returns
+  Scaleway's whole catalogue. If you see thousands of findings about AlmaLinux
+  or Ubuntu, the organization filter has regressed.
+- **Project-scoped products are swept per project.** The header should say
+  `projects: 4`, not `unknown`. Messaging & Queuing is the one that needs it.
+
+The specification behind the report:
+
+```bash
+cargo run --release -- catalog --checks | grep -E "domain\.|iot\.|registry\.|secret-manager\."
+```
+
+---
+
+## 7. The raw API
 
 Paths come straight out of `catalog`. Substitute a zone or region you actually
 use.
@@ -339,7 +388,7 @@ cargo run -q -- api '/instance/v1/zones/{zone}/security_groups' --list --zone fr
 
 ---
 
-## 7. Output and rendering
+## 8. Output and rendering
 
 ```bash
 cargo run -- project                    # dates should read "2022-05-17  (4y ago)"
@@ -351,7 +400,7 @@ cargo run -- project -o json > /tmp/p.json && cat /tmp/p.json    # warnings stil
 
 ---
 
-## 8. Cleaning up
+## 9. Cleaning up
 
 ```bash
 cargo run -- profile remove prod
@@ -362,19 +411,24 @@ unset MLAB_SCW_CONFIG
 
 ## The feedback I actually want
 
-Phase 3 first, because it is the newest and the one whose failures are silent:
+Phase 4 first — it makes the most judgement calls and its failures are the
+quietest:
 
-1. **Anything reachable from the internet that the map does not list.** A missed
-   exposure looks exactly like a clean account.
-2. **Any map row that is wrong** — not actually reachable, or the wrong verdict
-   for what is in front of it.
-3. **Any `exposure` finding that is false**, with the id and what is actually
-   the case.
+1. **Any `quiet` finding that is false**, with the id and what is actually the
+   case.
+2. **Any plaintext credential it missed.** Compare its output against your own
+   containers, functions and jobs.
+3. **Any value that appears in the output.** The detector must never print what
+   it found; if it does, that is the most serious bug in the tool.
+
+Then phase 3:
+
+4. **Anything reachable from the internet that the map does not list**, or any
+   map row with the wrong verdict.
 
 Then phase 2:
 
-4. **Any `iam` finding that is false, or true but not worth a line.**
-5. **Anything you would check by hand that `iam` does not.**
+5. **Any `iam` finding that is false, or true but not worth a line.**
 
 Then phase 1:
 

@@ -120,6 +120,10 @@ pub enum Cmd {
     #[command(alias = "edge")]
     Exposure(commands::exposure::ExposureArgs),
 
+    /// The products nobody looks at: plaintext credentials, dangling names, forgotten data
+    #[command(alias = "forgotten")]
+    Quiet(commands::quiet::QuietArgs),
+
     /// Who can do what: principals, credentials, policies, and the checks on them
     Iam {
         #[command(subcommand)]
@@ -183,6 +187,7 @@ pub async fn run() -> Result<()> {
         Cmd::Whoami => commands::whoami::run(&c, &ctx).await,
         Cmd::Exposure(a) => commands::exposure::run(c, &ctx, &a).await,
         Cmd::Iam { cmd } => commands::iam::run(&c, &ctx, cmd).await,
+        Cmd::Quiet(a) => commands::quiet::run(c, &ctx, &a).await,
         Cmd::Project(a) => commands::projects::run(&c, &ctx, &a).await,
         Cmd::Api(a) => commands::api::run(&c, &ctx, a).await,
     }

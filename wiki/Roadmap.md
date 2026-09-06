@@ -35,6 +35,11 @@ would cover.
   from the internet and what narrows it, in three rounds over every locality,
   with 30 graded checks. The concurrent locality fan-out it needed
   (`src/scw/sweep.rs`) is the machinery `sweep` will reuse.
+- **[`quiet`](Quiet)** — *built.* The products nobody looks at: credentials in
+  plain environment variables, DNS records pointing at infrastructure the
+  account no longer holds, registry visibility, device-fleet trust, forgotten
+  data. 47 checks, and the credential detector in `src/audit/credential.rs`
+  that the first of those rests on.
 - **`sweep`** — walk the catalogue and write one dated, secret-free record of
   everything the key can see. [`api`](Api) already proves each path individually;
   this is the fan-out over projects, regions and zones, with per-endpoint
@@ -49,8 +54,6 @@ would cover.
 
 These are why reading thirty-six APIs in one pass is worth the effort.
 
-- **`takeover`** — DNS records whose targets the account no longer holds. Needs
-  the address inventory `exposure` builds.
 - **`blast`** — what one credential reaches: policies and rules on one side,
   private NICs, gateway networks and VPC ACL rules on the other.
 - **`spend`** — billing read as a detector. A consumption line moving against

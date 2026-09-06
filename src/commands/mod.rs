@@ -14,5 +14,6 @@ pub mod ping;
 pub mod profile;
 pub mod projects;
 pub mod prompt;
+pub mod quiet;
 pub mod settings;
 pub mod whoami;

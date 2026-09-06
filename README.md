@@ -58,6 +58,7 @@ if the key cannot read IAM. See
 | [`whoami`](wiki/Whoami.md) | What this key is, and every policy, permission set and scope behind it. |
 | [`iam`](wiki/Iam.md) | Who can do what, and 26 graded checks on it. The first real audit. |
 | [`exposure`](wiki/Exposure.md) | What answers from the internet, what narrows it, and 30 checks on the gap. |
+| [`quiet`](wiki/Quiet.md) | The products nobody looks at: plaintext credentials, dangling names, forgotten data. |
 | [`project`](wiki/Project.md) | The projects the key can see — the boundary of every other answer. |
 | [`api`](wiki/Api.md) | Raw GET against any path, for everything not wrapped yet. |
 | [`profile`](wiki/Profile.md) | List, show, select and delete saved profiles. |
