@@ -369,6 +369,11 @@ pub static PRODUCTS: &[Product] = &[
                 check!(Medium, "baremetal.servers.unprotected", "protected=false"),
                 check!(Medium, "baremetal.servers.user-data", "installation user data, read the same way Instance cloud-init is"),
             ]),
+            res!("server-private-networks", "/server-private-networks",
+                "Which of these machines are attached to a private network, and which have \
+                 nothing but their public addresses.", [
+                check!(Medium, "baremetal.server-private-networks.none", "no attachment at all in a zone that holds servers: every machine there talks over the public network or not at all"),
+            ]),
             one!("bmc", "/servers/{id}/bmc-access", parent = "servers",
                 "Out-of-band console access: a URL, a login and a password.", [
                 check!(Critical, "baremetal.bmc.open", "a live BMC session: keyboard and screen on the machine, below the operating system, with credentials this API returns in plaintext"),

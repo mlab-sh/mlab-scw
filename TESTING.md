@@ -1,4 +1,4 @@
-# Test plan — phases 1 and 2
+# Test plan — phases 1 to 3
 
 Everything below is a `cargo run -- …` you can paste. Nothing here writes to
 your account: every request the tool makes is a GET.
@@ -210,7 +210,56 @@ ones most likely to be subtly wrong:
 
 ---
 
-## 5. The raw API
+## 5. The public edge (phase 3)
+
+The cross-product sweep: everything that answers from the internet, and what
+stands in front of it. Around 160 calls in two seconds on a small account.
+
+```bash
+cargo run --release -- exposure
+```
+
+Use `--release`; the debug build makes 160 requests noticeably slower.
+
+**What to look for, in order:**
+
+1. **Is anything in the map wrong?** A row that is not actually reachable, or a
+   `VERDICT` that misreads the control in front. This is the part no unit test
+   can check for your account.
+2. **Is anything missing from the map** that you know answers from the internet?
+   That is the most valuable bug you can find here — a missed exposure is
+   silent, and the report will look clean.
+3. **Does the gap list at the top match what your key cannot read?**
+
+```bash
+cargo run --release -- exposure --map              # the inventory, no findings
+cargo run --release -- exposure --severity critical
+cargo run --release -- exposure --region fr-par    # one region
+cargo run --release -- exposure --concurrency 16   # faster, less polite
+```
+
+```bash
+cargo run --release -- exposure -o json | jq -r '.exposures[] | "\(.verdict)\t\(.kind)\t\(.endpoint)"'
+cargo run --release -- exposure -o json | jq '.gaps'
+cargo run --release -- exposure -o json | jq '.calls'
+```
+
+Three behaviours worth confirming deliberately, because each is a judgement
+call I made rather than a fact the API states:
+
+- **`unknown` is never guessed.** If a security group or ACL cannot be read, the
+  row says `unknown` and no finding is emitted. Try a key without
+  `InstancesReadOnly` and check that a public server appears as `unknown` rather
+  than as `open`.
+- **A 501 is not an error.** Scaleway answers `501 Not Implemented` for a
+  product that does not run in a zone. Those are silent. If you see gap lines
+  about products not existing somewhere, that is a regression.
+- **Gaps are per product, not per locality.** A missing permission set should
+  produce one line saying "denied in 10 localities", not ten lines.
+
+---
+
+## 6. The raw API
 
 Paths come straight out of `catalog`. Substitute a zone or region you actually
 use.
@@ -290,7 +339,7 @@ cargo run -q -- api '/instance/v1/zones/{zone}/security_groups' --list --zone fr
 
 ---
 
-## 6. Output and rendering
+## 7. Output and rendering
 
 ```bash
 cargo run -- project                    # dates should read "2022-05-17  (4y ago)"
@@ -302,7 +351,7 @@ cargo run -- project -o json > /tmp/p.json && cat /tmp/p.json    # warnings stil
 
 ---
 
-## 7. Cleaning up
+## 8. Cleaning up
 
 ```bash
 cargo run -- profile remove prod
@@ -313,27 +362,24 @@ unset MLAB_SCW_CONFIG
 
 ## The feedback I actually want
 
-Phase 2 first, because it is the new part and the part that can be wrong in ways
-the tests cannot catch:
+Phase 3 first, because it is the newest and the one whose failures are silent:
 
-1. **Any `iam` finding that is false.** The id, and what is actually the case.
-   A check that fires on something correct is worse than a check that does not
-   exist.
-2. **Any `iam` finding that is true but not worth a line.** Noise is the other
-   way an audit stops being read.
-3. **Anything you would check by hand that `iam` does not.**
+1. **Anything reachable from the internet that the map does not list.** A missed
+   exposure looks exactly like a clean account.
+2. **Any map row that is wrong** — not actually reachable, or the wrong verdict
+   for what is in front of it.
+3. **Any `exposure` finding that is false**, with the id and what is actually
+   the case.
+
+Then phase 2:
+
+4. **Any `iam` finding that is false, or true but not worth a line.**
+5. **Anything you would check by hand that `iam` does not.**
 
 Then phase 1:
 
-4. **Anything in the catalogue that is wrong or missing** for the products you
-   run. Wrong path, wrong permission set, a check that is nonsense in practice,
-   a product you use that is not there.
-5. **Any command whose output you had to read twice.** Column choice, wording,
-   what is missing from the human render that sent you to `-o json`.
-6. **Any error message that did not tell you what to do next.**
-7. **Whether the auto-picked table columns show you the right things.** They go
-   identity, then booleans, then the rest, with `project_id` and
-   `organization_id` last. If a column you needed got pushed off, tell me which.
-8. **Anything that felt slow**, and roughly how many resources you have. The
-   client backs off on 429; the IAM audit fires its seven listings together, but
-   nothing else runs in parallel yet.
+6. **Anything in the catalogue that is wrong or missing** for the products you
+   run.
+7. **Any command whose output you had to read twice**, or any error message that
+   did not tell you what to do next.
+8. **Anything that felt slow**, and roughly how many resources you have.

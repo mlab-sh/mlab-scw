@@ -127,6 +127,17 @@ pub const SSH_KEY_COLS: &[Col] = &[
     Col("ID", &["id"]),
 ];
 
+/// What answers from the internet.
+pub const EXPOSURE_COLS: &[Col] = &[
+    Col("VERDICT", &["verdict"]),
+    Col("KIND", &["kind"]),
+    Col("NAME", &["name"]),
+    Col("WHERE", &["locality"]),
+    Col("ENDPOINT", &["endpoint"]),
+    Col("PORTS", &["ports"]),
+    Col("IN FRONT", &["control"]),
+];
+
 /// The audit catalogue: one row per readable resource.
 pub const CATALOG_COLS: &[Col] = &[
     Col("PRODUCT", &["product"]),

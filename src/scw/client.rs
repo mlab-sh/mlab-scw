@@ -102,6 +102,10 @@ impl std::fmt::Display for ApiError {
             // "precondition is not respected" is not a permission problem and
             // not a bug in the request; it means the product is not activated
             // here, which for an audit is a finding rather than a failure.
+            StatusCode::NOT_IMPLEMENTED => write!(
+                f,
+                "\nhint: this product does not run in that region or zone"
+            )?,
             StatusCode::PRECONDITION_FAILED => write!(
                 f,
                 "\nhint: this product is probably not activated in that project; \
@@ -445,7 +449,18 @@ fn parse_error(status: StatusCode, body: &[u8], retry_after: Option<u64>) -> Api
 /// A `Retry-After` is honoured when the server sends one, capped; otherwise the
 /// wait doubles from a second.
 fn backoff(e: &ApiError, attempt: u32) -> Option<Duration> {
-    let retryable = e.status == StatusCode::TOO_MANY_REQUESTS || e.status.is_server_error();
+    // Not `is_server_error()`: Scaleway answers 501 for a product that does not
+    // run in a locality, which is a permanent and correct answer. Retrying it
+    // turns a sweep of ten zones into thirty pointless requests and eleven
+    // seconds of backoff before the same reply arrives.
+    let retryable = matches!(
+        e.status,
+        StatusCode::TOO_MANY_REQUESTS
+            | StatusCode::INTERNAL_SERVER_ERROR
+            | StatusCode::BAD_GATEWAY
+            | StatusCode::SERVICE_UNAVAILABLE
+            | StatusCode::GATEWAY_TIMEOUT
+    );
     if !retryable {
         return None;
     }

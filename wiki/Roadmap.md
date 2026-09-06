@@ -31,6 +31,10 @@ would cover.
   tested against fixtures, so a later `sweep` can feed them from a file instead
   of from the API. The report groups by check, names what it could not read, and
   names the catalogued checks it does not yet derive.
+- **[`exposure`](Exposure)** — *built.* The cross-product map of what answers
+  from the internet and what narrows it, in three rounds over every locality,
+  with 30 graded checks. The concurrent locality fan-out it needed
+  (`src/scw/sweep.rs`) is the machinery `sweep` will reuse.
 - **`sweep`** — walk the catalogue and write one dated, secret-free record of
   everything the key can see. [`api`](Api) already proves each path individually;
   this is the fan-out over projects, regions and zones, with per-endpoint
@@ -45,9 +49,6 @@ would cover.
 
 These are why reading thirty-six APIs in one pass is worth the effort.
 
-- **`exposure`** — IPAM plus per-product addresses plus load-balancer frontends
-  plus managed-database endpoints plus serverless privacy flags plus PAT rules,
-  resolved into one list of what answers from the internet and what it is.
 - **`takeover`** — DNS records whose targets the account no longer holds. Needs
   the address inventory `exposure` builds.
 - **`blast`** — what one credential reaches: policies and rules on one side,

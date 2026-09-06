@@ -6,6 +6,7 @@ pub mod config;
 pub mod identity;
 pub mod locality;
 pub mod secrets;
+pub mod sweep;
 
 pub use catalog::Severity;
 pub use client::{esc, Client, Paging};

@@ -9,6 +9,7 @@ mlab-scw catalog --permissions   # the policy to create
 mlab-scw login --name prod       # once
 mlab-scw whoami                  # what that key can actually reach
 mlab-scw iam                     # who can do what, and what is wrong with it
+mlab-scw exposure                # what answers from the internet
 ```
 
 ## Where to go
@@ -18,7 +19,7 @@ mlab-scw iam                     # who can do what, and what is wrong with it
 - [Configuration](Configuration) — profiles, the key manager, precedence.
 
 **One page per command**
-[catalog](Catalog) · [iam](Iam) · [login](Login) · [ping](Ping) · [whoami](Whoami) ·
+[catalog](Catalog) · [iam](Iam) · [exposure](Exposure) · [login](Login) · [ping](Ping) · [whoami](Whoami) ·
 [project](Project) · [api](Api) · [profile](Profile) · [config](Config) ·
 [completions](Completions)
 
