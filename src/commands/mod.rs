@@ -4,6 +4,7 @@
 //! and the resolved [`Ctx`](crate::cli::Ctx) for the API commands, nothing but
 //! its own arguments for the ones that only touch the config file.
 
+pub mod advisories;
 pub mod api;
 pub mod catalog;
 pub mod completions;

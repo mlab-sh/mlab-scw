@@ -412,6 +412,7 @@ pub static PRODUCTS: &[Product] = &[
             res!("clusters", "/clusters",
                 "Version, CNI, admission plugins, feature gates, OIDC and the API server's certificate names.", [
                 check!(Critical, "k8s.clusters.public-apiserver-no-acl", "a public control plane with acl_available and no rule narrowing it: kube-apiserver on the open internet"),
+                check!(High, "k8s.clusters.known-cve", "published advisories whose affected range covers the version this cluster runs, graded by whether any is in the KEV catalogue of things being exploited now"),
                 check!(High, "k8s.clusters.eol-version", "a Kubernetes version past upstream support, so CVEs are no longer backported"),
                 check!(High, "k8s.clusters.no-auto-upgrade", "auto_upgrade disabled and an upgrade available"),
                 check!(High, "k8s.clusters.cni-no-policy", "a CNI without NetworkPolicy support, so every pod can reach every pod"),
@@ -506,6 +507,12 @@ pub static PRODUCTS: &[Product] = &[
             res!("namespaces", "/namespaces", "Namespace-wide environment.", [
                 check!(Critical, "functions.namespaces.plaintext-secret", "a credential in environment_variables"),
             ]),
+            res!("runtimes", "/runtimes",
+                "Every runtime the platform offers, each carrying its own end-of-life verdict. \
+                 The one version check that needs no external corpus: Scaleway publishes when \
+                 a runtime stops being patched.", [
+                check!(Info, "functions.runtimes.catalogue", "the platform's own list of which runtimes are available, out of support, or dead"),
+            ]),
             res!("functions", "/functions",
                 "Privacy, runtime, handler and environment.", [
                 check!(Critical, "functions.functions.public", "privacy=public"),
@@ -552,6 +559,7 @@ pub static PRODUCTS: &[Product] = &[
                 check!(Critical, "rdb.instances.public-endpoint", "a load-balancer endpoint on the public internet, which is the default and stays the default"),
                 check!(High, "rdb.instances.no-encryption", "encryption at rest off"),
                 check!(High, "rdb.instances.no-backup", "no backup schedule, or a retention shorter than the time it takes to notice a deletion"),
+                check!(High, "rdb.instances.known-cve", "published advisories covering this engine version"),
                 check!(High, "rdb.instances.eol-engine", "an engine version past upstream support"),
                 check!(Medium, "rdb.instances.no-ha", "is_ha_cluster=false on something described as production"),
                 check!(Medium, "rdb.instances.backup-same-region", "backups in the region they protect against losing"),
@@ -586,6 +594,7 @@ pub static PRODUCTS: &[Product] = &[
                 "TLS, ACL rules and whether an endpoint faces the public network.", [
                 check!(Critical, "redis.clusters.public-no-acl", "a public_network endpoint with an ACL rule of 0.0.0.0/0"),
                 check!(Critical, "redis.clusters.no-tls", "tls_enabled=false: the password and every value cross the network in clear"),
+                check!(High, "redis.clusters.known-cve", "published advisories covering this Redis version"),
                 check!(High, "redis.clusters.eol-version", "a version past support"),
             ]),
         ],
@@ -621,6 +630,7 @@ pub static PRODUCTS: &[Product] = &[
         resources: &[
             res!("deployments", "/deployments",
                 "Endpoints and whether they are public.", [
+                check!(High, "searchdb.deployments.known-cve", "published advisories covering this OpenSearch version"),
                 check!(Critical, "searchdb.deployments.public", "a public endpoint on an index that mirrors production data"),
             ]),
         ],
@@ -636,6 +646,7 @@ pub static PRODUCTS: &[Product] = &[
         resources: &[
             res!("clusters", "/clusters",
                 "Endpoints, version and settings.", [
+                check!(High, "kafka.clusters.known-cve", "published advisories covering this Kafka version"),
                 check!(Critical, "kafka.clusters.public", "a public_network endpoint"),
             ]),
         ],

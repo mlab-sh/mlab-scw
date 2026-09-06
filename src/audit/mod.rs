@@ -5,6 +5,7 @@
 //! fixtures rather than against an account, and what will let a later `sweep`
 //! feed the same functions from a file instead of from the API.
 
+pub mod advisories;
 pub mod credential;
 pub mod exposure;
 pub mod iam;

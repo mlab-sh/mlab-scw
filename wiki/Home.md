@@ -11,6 +11,7 @@ mlab-scw whoami                  # what that key can actually reach
 mlab-scw iam                     # who can do what, and what is wrong with it
 mlab-scw exposure                # what answers from the internet
 mlab-scw quiet                   # what nobody has looked at in years
+mlab-scw advisories --allow-web  # what has been published about what you run
 ```
 
 ## Where to go
@@ -20,7 +21,7 @@ mlab-scw quiet                   # what nobody has looked at in years
 - [Configuration](Configuration) — profiles, the key manager, precedence.
 
 **One page per command**
-[catalog](Catalog) · [iam](Iam) · [exposure](Exposure) · [quiet](Quiet) · [login](Login) · [ping](Ping) · [whoami](Whoami) ·
+[catalog](Catalog) · [iam](Iam) · [exposure](Exposure) · [quiet](Quiet) · [advisories](Advisories) · [login](Login) · [ping](Ping) · [whoami](Whoami) ·
 [project](Project) · [api](Api) · [profile](Profile) · [config](Config) ·
 [completions](Completions)
 

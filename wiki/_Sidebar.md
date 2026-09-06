@@ -8,6 +8,7 @@
 - [iam](Iam)
 - [exposure](Exposure)
 - [quiet](Quiet)
+- [advisories](Advisories)
 - [login](Login)
 - [ping](Ping)
 - [whoami](Whoami)

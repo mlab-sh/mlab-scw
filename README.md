@@ -1,5 +1,7 @@
 # mlab-scw
 
+![](./.github/banner.png)
+
 **A CLI over the Scaleway API, built as a base for read-only cloud posture
 audits.**
 
@@ -8,7 +10,12 @@ It talks to `api.scaleway.com` with a Scaleway API key, and a profile in
 sweep.
 
 **Every request it makes is a GET.** There is no flag that sends anything else.
-Nothing leaves your machine except the API calls themselves.
+
+Nothing leaves your machine except the calls to `api.scaleway.com` — with one
+exception, opt-in per run: [`advisories --allow-web`](wiki/Advisories.md) asks
+vuln.mlab.sh what has been published about the software you run, sending a
+product identifier and nothing else. `--explain` prints that payload before it
+is sent.
 
 ## Install
 
@@ -59,6 +66,7 @@ if the key cannot read IAM. See
 | [`iam`](wiki/Iam.md) | Who can do what, and 26 graded checks on it. The first real audit. |
 | [`exposure`](wiki/Exposure.md) | What answers from the internet, what narrows it, and 30 checks on the gap. |
 | [`quiet`](wiki/Quiet.md) | The products nobody looks at: plaintext credentials, dangling names, forgotten data. |
+| [`advisories`](wiki/Advisories.md) | What the account runs, against what has been published about it. |
 | [`project`](wiki/Project.md) | The projects the key can see — the boundary of every other answer. |
 | [`api`](wiki/Api.md) | Raw GET against any path, for everything not wrapped yet. |
 | [`profile`](wiki/Profile.md) | List, show, select and delete saved profiles. |

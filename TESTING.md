@@ -1,4 +1,4 @@
-# Test plan — phases 1 to 4
+# Test plan — phases 1 to 5
 
 Everything below is a `cargo run -- …` you can paste. Nothing here writes to
 your account: every request the tool makes is a GET.
@@ -308,7 +308,60 @@ cargo run --release -- catalog --checks | grep -E "domain\.|iot\.|registry\.|sec
 
 ---
 
-## 7. The raw API
+## 7. Published advisories (phase 5)
+
+The only command that talks to anything but `api.scaleway.com`. Start with the
+one that sends nothing:
+
+```bash
+cargo run --release -- advisories --explain
+```
+
+It prints the exact requests a real run would make. **Read them before going
+further** — that is the whole point of the flag. Each line should be a CPE and a
+page size, and nothing about your account.
+
+```bash
+cargo run --release -- advisories                # local cache only
+cargo run --release -- advisories --allow-web    # actually check
+cargo run --release -- advisories --allow-web --severity high
+cargo run --release -- advisories -o json | jq '.components, .coverage'
+```
+
+**What to look for:**
+
+1. **Does the component table match what you actually run?** A version listed
+   wrong is a finding graded against the wrong range.
+2. **Does anything you run *not* appear?** The table only knows six products —
+   Kubernetes, PostgreSQL, MySQL, Redis, Kafka, OpenSearch. If you run something
+   else worth checking, tell me and I will verify its CPE against the corpus
+   before adding it.
+3. **Is the `Not checked` block honest?** A product the corpus files nothing
+   under must appear there, never as silence.
+
+Four behaviours worth confirming deliberately:
+
+- **Nothing goes out without the flag.** Run `advisories` with no `--allow-web`
+  on a machine with an empty `~/.mlab/scw/` and confirm it reports everything as
+  unchecked rather than as clean.
+- **The cache works.** Two `--allow-web` runs in a row; the second should say
+  "served from the local cache" and be instant. `ls -l ~/.mlab/scw/` — the files
+  must be `-rw-------`.
+- **KEV outranks CVSS.** A matching advisory in KEV is a `critical` even at a
+  lower CVSS than a `high`. That is deliberate: it means somebody is using it
+  today.
+- **The network path itself**, which no offline test can prove:
+
+  ```bash
+  cargo test -- --ignored corpus_answers
+  ```
+
+  It checks that the CPE filter is honoured rather than ignored, that paging
+  terminates, and that a real version lands inside a real published range.
+
+---
+
+## 8. The raw API
 
 Paths come straight out of `catalog`. Substitute a zone or region you actually
 use.
@@ -388,7 +441,7 @@ cargo run -q -- api '/instance/v1/zones/{zone}/security_groups' --list --zone fr
 
 ---
 
-## 8. Output and rendering
+## 9. Output and rendering
 
 ```bash
 cargo run -- project                    # dates should read "2022-05-17  (4y ago)"
@@ -400,7 +453,7 @@ cargo run -- project -o json > /tmp/p.json && cat /tmp/p.json    # warnings stil
 
 ---
 
-## 9. Cleaning up
+## 10. Cleaning up
 
 ```bash
 cargo run -- profile remove prod
@@ -411,29 +464,29 @@ unset MLAB_SCW_CONFIG
 
 ## The feedback I actually want
 
-Phase 4 first — it makes the most judgement calls and its failures are the
-quietest:
+Phase 5 first, because it is the only part that sends anything anywhere:
 
-1. **Any `quiet` finding that is false**, with the id and what is actually the
-   case.
-2. **Any plaintext credential it missed.** Compare its output against your own
-   containers, functions and jobs.
-3. **Any value that appears in the output.** The detector must never print what
-   it found; if it does, that is the most serious bug in the tool.
+1. **Anything in `--explain` you would not want sent.** That output is the
+   contract; if it carries something about your account, that is the most
+   serious bug here.
+2. **A component listed with the wrong version**, or one you run that the table
+   does not know about.
+3. **Anything reported as clean that should have read as unchecked.**
+
+Then phase 4:
+
+4. **Any `quiet` finding that is false**, any plaintext credential it missed,
+   and any value that appears in the output.
 
 Then phase 3:
 
-4. **Anything reachable from the internet that the map does not list**, or any
+5. **Anything reachable from the internet that the map does not list**, or any
    map row with the wrong verdict.
 
-Then phase 2:
+Then phases 2 and 1:
 
-5. **Any `iam` finding that is false, or true but not worth a line.**
-
-Then phase 1:
-
-6. **Anything in the catalogue that is wrong or missing** for the products you
+6. **Any `iam` finding that is false, or true but not worth a line.**
+7. **Anything in the catalogue that is wrong or missing** for the products you
    run.
-7. **Any command whose output you had to read twice**, or any error message that
+8. **Any command whose output you had to read twice**, or any error message that
    did not tell you what to do next.
-8. **Anything that felt slow**, and roughly how many resources you have.

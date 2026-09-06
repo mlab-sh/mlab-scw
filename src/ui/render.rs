@@ -138,6 +138,13 @@ pub const EXPOSURE_COLS: &[Col] = &[
     Col("IN FRONT", &["control"]),
 ];
 
+/// What the account runs, for the advisory report.
+pub const COMPONENT_COLS: &[Col] = &[
+    Col("SOFTWARE", &["software"]),
+    Col("VERSION", &["version"]),
+    Col("WHERE", &["subject"]),
+];
+
 /// The audit catalogue: one row per readable resource.
 pub const CATALOG_COLS: &[Col] = &[
     Col("PRODUCT", &["product"]),

@@ -6,6 +6,7 @@
 //! | ---------- | ------------------------------------------------------------- |
 //! | `scw`      | the API: HTTP handler, profiles, localities, the catalogue     |
 //! | `audit`    | the graded checks, as pure functions over fetched data         |
+//! | `enrich`   | what the account runs, against what has been published about it |
 //! | `ui`       | everything the user sees: progress on stderr, rendering        |
 //! | `cli`      | the clap surface and the dispatch                              |
 //! | `commands` | one module per command                                         |
@@ -13,6 +14,7 @@
 mod audit;
 mod cli;
 mod commands;
+mod enrich;
 mod scw;
 mod ui;
 

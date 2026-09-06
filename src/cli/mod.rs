@@ -120,6 +120,10 @@ pub enum Cmd {
     #[command(alias = "edge")]
     Exposure(commands::exposure::ExposureArgs),
 
+    /// What this account runs, against what has been published about it
+    #[command(alias = "cve")]
+    Advisories(commands::advisories::AdvisoryArgs),
+
     /// The products nobody looks at: plaintext credentials, dangling names, forgotten data
     #[command(alias = "forgotten")]
     Quiet(commands::quiet::QuietArgs),
@@ -188,6 +192,7 @@ pub async fn run() -> Result<()> {
         Cmd::Exposure(a) => commands::exposure::run(c, &ctx, &a).await,
         Cmd::Iam { cmd } => commands::iam::run(&c, &ctx, cmd).await,
         Cmd::Quiet(a) => commands::quiet::run(c, &ctx, &a).await,
+        Cmd::Advisories(a) => commands::advisories::run(c, &ctx, &a).await,
         Cmd::Project(a) => commands::projects::run(&c, &ctx, &a).await,
         Cmd::Api(a) => commands::api::run(&c, &ctx, a).await,
     }

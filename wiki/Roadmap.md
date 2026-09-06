@@ -40,6 +40,11 @@ would cover.
   account no longer holds, registry visibility, device-fleet trust, forgotten
   data. 47 checks, and the credential detector in `src/audit/credential.rs`
   that the first of those rests on.
+- **[`advisories`](Advisories)** — *built.* The versions the account runs,
+  matched against the published corpus at vuln.mlab.sh by CPE and version
+  range. The only command that talks to anything but `api.scaleway.com`:
+  opt-in per run, a product identifier is all that leaves, and `--explain`
+  prints the payload before it is sent.
 - **`sweep`** — walk the catalogue and write one dated, secret-free record of
   everything the key can see. [`api`](Api) already proves each path individually;
   this is the fan-out over projects, regions and zones, with per-endpoint
